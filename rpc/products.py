@@ -22,6 +22,22 @@ class Products(object):
 
     @rpc
     def getproduct(self, ID):
-        stripe.api_key = "sk_test_K5QUkUgvUNKvDD9fEGYBI6Gi"
         item = stripe.Product.retrieve(ID)
         return item
+
+    @rpc
+    def list_products(self, count=None):
+        item = stripe.Product.list(limit=count)
+        return item
+
+    @rpc
+    def delete_product(self, ID):
+        product = stripe.Product.retrieve(ID)
+        res = product.delete()
+        return res
+
+    @rpc
+    def update_product(self, ID, KEY, VALUE):
+        product = stripe.Product.retrieve(ID)
+        product.metadata[KEY] = VALUE
+        product.save()
