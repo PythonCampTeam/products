@@ -26,7 +26,23 @@ class Products(object):
         return item
 
     @rpc
-    def list_products(self, count=None):
+    def create_product(self, name, description,
+                       attributes, package_dimensions):
+        stripe.api_key = "sk_test_K5QUkUgvUNKvDD9fEGYBI6Gi"
+        # name = kwargs.get('name')
+        # description = kwargs.get('description')
+        # attributes = kwargs.get('attributes')
+        # package_dimensions = kwargs.get('package_dimensions')
+        item = stripe.Product.create(
+         name=name,
+         description=description,
+         attributes=attributes,
+         package_dimensions=package_dimensions
+         )
+        return item
+
+    @rpc
+    def list_products(self, count=100):
         item = stripe.Product.list(limit=count)
         return item
 
