@@ -99,7 +99,47 @@ class Products(object):
 
     @rpc
     def filter_products(self, category):
-        """Returns the sorted product list"""
+        """Returns the filtering product list"""
         items = stripe.Product.list(limit=100)["data"]
         result = [it for it in items if it.metadata.get("category") == category]
         return result
+
+    @rpc
+    def sorted_products(self, sorty_value, DESC):
+        """Returns the sorted product list
+        Args:
+            sorty (str) parameter for to sorty
+            items (list) List of objects products
+            prod_sorted (list) sorted products list
+        Returns:
+            sorted products list"""
+        items = stripe.Product.list(limit=100)["data"]
+        list_sorted = [it.get(sorty_value) for it in items]
+        list_sorted.sort(reverse=DESC)
+        prod_sorted = []
+        for it in list_sorted:
+            for item in items:
+                if it == item.get(sorty_value):
+                    prod_sorted.append(item)
+        return prod_sorted
+
+    # @rpc
+    # def sorted_products(sorty_value):
+    #     items = stripe.Product.list(limit=100)["data"]
+    #     prod_sorted = []
+    #     list_sorted = [it.get(sorty_value) for it in items if
+    #                    it.get(sorty_value) is not None]
+    #     if list_sorted == []:
+    #         list_sorted = [it.metadata.get(sorty_value) for it in items]
+    #         list_sorted = list(set(list_sorted))
+    #         list_sorted.sort()
+    #         for it in list_sorted:
+    #             for item in items:
+    #                 if it == item.metadata.get(sorty_value):
+    #                     prod_sorted.append(item)
+    #     list_sorted.sort()
+    #     for it in list_sorted:
+    #         for item in items:
+    #             if it == item.get(sorty_value):
+    #                 prod_sorted.append(item)
+    #     return prod_sorted
