@@ -96,3 +96,10 @@ class Products(object):
         product[key] = value
         res = product.save()
         return res
+
+    @rpc
+    def filter_products(self, category):
+        """Returns the sorted product list"""
+        items = stripe.Product.list(limit=100)["data"]
+        result = [it for it in items if it.metadata.get("category") == category]
+        return result
