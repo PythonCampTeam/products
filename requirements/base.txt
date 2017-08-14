@@ -1,3 +1,2 @@
 nameko
-shippo
 stripe
