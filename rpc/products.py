@@ -18,13 +18,13 @@ class Products(object):
                 'docs': self.__class__.__doc__}
 
     @rpc
-    def getproduct(self, ID):
+    def getproduct(self, id_product):
         """Return product on Id
         Args:
             ID (syring) The identifier for the product
         Returns:
             Returns a product object if the call succeeded."""
-        item = stripe.Product.retrieve(ID)
+        item = stripe.Product.retrieve(id_product)
         return item
 
     @rpc
@@ -81,18 +81,18 @@ class Products(object):
         return res
 
     @rpc
-    def update_product(self, ID, KEY, VALUE):
+    def update_product(self, id_product, key, value):
         """Updates the specific product by setting the values of the parameters
            passed.
         Note: Note that a product’s attributes are not editable.
         Args:
-            ID (string) The ID of the product to update.
-            KEY (string) The parameter to update.
-            VALUE New value for the parameter
+            id_product (string) The ID of the product to update.
+            key (string) The parameter to update.
+            value New value for the parameter
         Returns:
             Returns the product object if the update succeeded.
         """
-        product = stripe.Product.retrieve(ID)
-        product[KEY] = VALUE
+        product = stripe.Product.retrieve(id_product)
+        product[key] = value
         res = product.save()
         return res
