@@ -41,6 +41,10 @@ class Products(object):
          )
         return item
 
+    # @rpc
+    # def list_products(self, count=100):
+    #     item = stripe.Product.list(limit=count)
+    #     return item
     @rpc
     def list_products(self, count=100):
         item = stripe.Product.list(limit=count)
@@ -55,5 +59,6 @@ class Products(object):
     @rpc
     def update_product(self, ID, KEY, VALUE):
         product = stripe.Product.retrieve(ID)
-        product.metadata[KEY] = VALUE
-        product.save()
+        product[KEY] = VALUE
+        res = product.save()
+        return res
