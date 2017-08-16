@@ -22,7 +22,7 @@ class Products(object):
     def getproduct(self, id_product):
         """Return product on Id
         Args:
-            ID (syring) The identifier for the product
+            id_product (syring) The identifier for the product
         Returns:
             Returns a product object if the call succeeded."""
         item = stripe.Product.retrieve(id_product)
@@ -87,15 +87,15 @@ class Products(object):
         return item
 
     @rpc
-    def delete_product(self, ID):
+    def delete_product(self, id_product):
         """Delete a product.
         Args:
-            ID (string) The ID of the product to delete.
+            id_product (string) The ID of the product to delete.
         Returns:
             result (object) Returns an object with a deleted parameter on success.
             Otherwise, this call raises an error.
         """
-        product = stripe.Product.retrieve(ID)
+        product = stripe.Product.retrieve(id_product)
         result = product.delete()
         return result
 
@@ -117,7 +117,7 @@ class Products(object):
         return result
 
     @rpc
-    def filter_products(self, category, order_by, DESC):
+    def filter_products(self, category, order_by, desc):
         """Returns the filtering product list
         Args:
             category (stripe) parameter for search
@@ -132,17 +132,17 @@ class Products(object):
                   == category]
         if order_by == "None" or order_by == "null":
             return result
-        sort = Products.sorted(result, order_by, DESC)
+        sort = Products.sorted(result, order_by, desc)
         return sort
 
     @rpc
-    def search_products(self, search, order_by, DESC):
+    def search_products(self, search, order_by, desc):
         """Returns a list of products with a given parameter
         Args:
             search (string) parameter for search
             items (list) List of all products
             order_by (string) parameter for to ordering
-            DESC (bool) sorting direction
+            desc (bool) sorting direction
             result (list) list products sorting by search
         Returns
             result (list) sorted list products"""
@@ -153,20 +153,20 @@ class Products(object):
                   it.metadata.get("for") == search]
         if order_by == "None" or order_by == "null":
             return result
-        sort = Products.sorted(result, order_by, DESC)
+        sort = Products.sorted(result, order_by, desc)
         return sort
 
     @rpc
-    def sorted_products(self, sorty_value, DESC):
+    def sorted_products(self, sorty_value, desc):
         """Returns the sorted ordered list
         Args:
             items (list) List of all products
             sorty_value (string) parameter for to ordering
-            DESC (bool) sorting direction
+            desc (bool) sorting direction
         Return:
             sort (list) list products ordered"""
         items = stripe.Product.list(limit=100)["data"]
-        sort = Products.sorted(items, sorty_value, DESC)
+        sort = Products.sorted(items, sorty_value, desc)
         return sort
 
     def sorted(items, sorty_value, DESC):
@@ -176,7 +176,7 @@ class Products(object):
             items (list) List of objects products
             prod_sorted (list) sorted products list
             func_sort (func) Function for sorting
-            DESC (bool) sorting direction
+            desc (bool) sorting direction
         Returns:
             Sorted products list"""
         def sorty_price(item):
@@ -187,6 +187,6 @@ class Products(object):
             return sorted(items, key=func_sort, reverse=DESC)
         if items[0].get(sorty_value) is None:
             func_sort = operator.attrgetter('metadata.'+sorty_value)
-            return sorted(items, key=func_sort, reverse=DESC)
+            return sorted(items, key=func_sort, reverse=desc)
         func_sort = operator.attrgetter(sorty_value)
-        return sorted(items, key=func_sort, reverse=DESC)
+        return sorted(items, key=func_sort, reverse=desc)
