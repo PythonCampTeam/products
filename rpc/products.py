@@ -169,7 +169,7 @@ class Products(object):
         sort = Products.sorted(items, sorty_value, desc)
         return sort
 
-    def sorted(items, sorty_value, DESC):
+    def sorted(items, sorty_value, desc):
         """Returns the sorted product list
         Args:
             sorty_value (str) parameter for to sorting
@@ -184,7 +184,7 @@ class Products(object):
             return item.skus.data[0].price
         if sorty_value == "price":
             func_sort = sorty_price
-            return sorted(items, key=func_sort, reverse=DESC)
+            return sorted(items, key=func_sort, reverse=desc)
         if items[0].get(sorty_value) is None:
             func_sort = operator.attrgetter('metadata.'+sorty_value)
             return sorted(items, key=func_sort, reverse=desc)
