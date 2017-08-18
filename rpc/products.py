@@ -1,6 +1,12 @@
 from nameko.rpc import rpc
 import stripe
 import operator
+from config.settings.common import security
+
+
+def __get_object(id_product):
+    """Retutn prod object by id"""
+    return stripe.Product.retrieve(id_product)
 
 
 class Products(object):
@@ -9,7 +15,7 @@ class Products(object):
     Note: See https://stripe.com"""
     name = 'ProductsRPC'
 
-    stripe.api_key = "sk_test_K5QUkUgvUNKvDD9fEGYBI6Gi"
+    stripe.api_key = security.api_key
 
     @rpc
     def testing(self, **kwargs):
@@ -25,11 +31,11 @@ class Products(object):
             id_product (syring) The identifier for the product
         Returns:
             Returns a product object if the call succeeded."""
-        item = stripe.Product.retrieve(id_product)
+        item = __get_object(id_product)
         return item
 
     @rpc
-    def create_product(self, convert):
+    def create_product(self, body):
         """Creted a new product whith SKU object
         Args:
             name (string) The product’s name, for the customer.
@@ -49,14 +55,14 @@ class Products(object):
         Returns:
             Returns a product object if the call succeeded.
             """
-        name = convert.get("name")
-        description = convert.get("description")
-        attributes = convert.get("attributes")
-        package_dimensions = convert.get("package_dimensions")
-        metadata = convert.get("metadata")
-        attributes_sku = convert.get("attributes_sku")
-        price = convert.get("price")
-        inventory = convert.get("inventory")
+        name = body.get("name")
+        description = body.get("description")
+        attributes = body.get("attributes")
+        package_dimensions = body.get("package_dimensions")
+        metadata = body.get("metadata")
+        attributes_sku = body.get("attributes_sku")
+        price = body.get("price")
+        inventory = body.get("inventory")
         item = stripe.Product.create(
             name=name,
             description=description,
@@ -73,7 +79,7 @@ class Products(object):
             inventory=inventory
         )
 
-        return stripe.Product.retrieve(item.id)
+        return __get_object(item.id)
 
     @rpc
     def list_products(self, count=100):

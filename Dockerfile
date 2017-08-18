@@ -1,7 +1,7 @@
 FROM python:3.5.3
 ADD requirements /service/requirements
+ADD config /service/config
 
-COPY config/config.yml /service/config/config.yml
 COPY rpc /service/rpc
 COPY run.sh /service
 WORKDIR /service
