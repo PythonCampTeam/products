@@ -1,11 +1,18 @@
-from nameko.rpc import rpc
-import stripe
 import operator
+
+import cerberus
+import stripe
+from nameko.rpc import rpc
+from rpc import validate
 from config.settings.common import security
 
+Validator = cerberus.Validator
 
-def __get_object(id_product):
-    """Retutn prod object by id"""
+schema = validate.schema_product
+
+
+def get_object(id_product):
+    """Retutn product object by id"""
     return stripe.Product.retrieve(id_product)
 
 
@@ -18,20 +25,19 @@ class Products(object):
     stripe.api_key = security.api_key
 
     @rpc
-    def testing(self, **kwargs):
-        """Check for work"""
-        doc_class = self.__dict__
-        return {self.__class__.__name__: doc_class,
-                'docs': self.__class__.__doc__}
-
-    @rpc
-    def getproduct(self, id_product):
+    def get_product(self, id_product):
         """Return product on Id
         Args:
             id_product (syring) The identifier for the product
         Returns:
             Returns a product object if the call succeeded."""
-        item = __get_object(id_product)
+        try:
+            item = get_object(id_product)
+        except stripe.error.InvalidRequestError as e:
+            body = e.json_body
+            err = body.get('error', {})
+            item = "Status is: {}, message is: {}".format(e.http_status,
+                                                          err.get('message'))
         return item
 
     @rpc
@@ -55,6 +61,9 @@ class Products(object):
         Returns:
             Returns a product object if the call succeeded.
             """
+        v = Validator()
+        if not v.validate(body, schema):
+            return False
         name = body.get("name")
         description = body.get("description")
         attributes = body.get("attributes")
@@ -76,70 +85,54 @@ class Products(object):
             price=price,
             package_dimensions=package_dimensions,
             currency="usd",
-            inventory=inventory
-        )
+            inventory=inventory)
 
-        return __get_object(item.id)
-
-    @rpc
-    def list_products(self, count=100):
-        """Return list products (max 100 items)
-        Args:
-            count(int) A limit on the number of objects to be returned.
-                       The default is 100 items.
-            item (list) Returns a list of products objects if the call succeeded
-            """
-        item = stripe.Product.list(limit=count)
-        return item
+        return get_object(item.id)
 
     @rpc
     def delete_product(self, id_product):
         """Delete a product.
         Args:
             id_product (string) The ID of the product to delete.
+            sku_id (string) The ID of the SKU of product
+            sku (object) object SKU to delete
+            product (object) object Product to delete
         Returns:
-            result (object) Returns an object with a deleted parameter on success.
+            result (object) Returns an object with a deleted parameter on
+            success.
             Otherwise, this call raises an error.
         """
-        product = stripe.Product.retrieve(id_product)
-        result = product.delete()
+        product = get_object(id_product)
+        try:
+            sku_id = product.skus.data[0].id
+            sku_id = product.skus.data[0].id
+            sku = stripe.SKU.retrieve(sku_id)
+            sku.delete()
+            result = product.delete()
+        except stripe.error.InvalidRequestError as e:
+            body = e.json_body
+            err = body.get('error', {})
+            result = "Status is: {}, message is: {}".format(e.http_status,
+                                                            err.get('message'))
         return result
 
     @rpc
-    def update_product(self, id_product, key, value):
+    def update_product(self, body):
         """Updates the specific product by setting the values of the parameters
            passed.
         Note: Note that a product’s attributes are not editable.
         Args:
             id_product (string) The ID of the product to update.
-            key (string) The parameter to update.
-            value New value for the parameter
+            body (dict) The parameter to update.
         Returns:
             result (object) Returns the product object if the update succeeded.
         """
+        id_product = body.pop("id")
         product = stripe.Product.retrieve(id_product)
-        product[key] = value
+        for key in body:
+            product[key] = body[key]
         result = product.save()
         return result
-
-    @rpc
-    def filter_products(self, category, order_by, desc):
-        """Returns the filtering product list
-        Args:
-            category (stripe) parameter for search
-            items (list) List of all products
-            order_by (str) parameter for to ordering
-            DESC (bool) sorting direction
-            result (list) list products sorting by category
-        Returns
-            sort (list) sorted list products"""
-        items = stripe.Product.list(limit=100)["data"]
-        result = [it for it in items if it.metadata.get("category")
-                  == category]
-        if order_by == "None" or order_by == "null":
-            return result
-        sort = Products.sorted(result, order_by, desc)
-        return sort
 
     @rpc
     def search_products(self, search, order_by, desc):
@@ -153,26 +146,14 @@ class Products(object):
         Returns
             result (list) sorted list products"""
         items = stripe.Product.list(limit=100)["data"]
-        result = [it for it in items if it.get("name") == search or
-                  it.metadata.get("type") == search or
-                  it.metadata.get("category") == search or
-                  it.metadata.get("for") == search]
-        if order_by == "None" or order_by == "null":
-            return result
+        if search is False:
+            result = items
+        else:
+            result = [it for it in items if it.get("name") == search or
+                      it.metadata.get("type") == search or
+                      it.metadata.get("category") == search or
+                      it.metadata.get("for") == search]
         sort = Products.sorted(result, order_by, desc)
-        return sort
-
-    @rpc
-    def sorted_products(self, sorty_value, desc):
-        """Returns the sorted ordered list
-        Args:
-            items (list) List of all products
-            sorty_value (string) parameter for to ordering
-            desc (bool) sorting direction
-        Return:
-            sort (list) list products ordered"""
-        items = stripe.Product.list(limit=100)["data"]
-        sort = Products.sorted(items, sorty_value, desc)
         return sort
 
     def sorted(items, sorty_value, desc):
