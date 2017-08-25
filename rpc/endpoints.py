@@ -1,12 +1,19 @@
 import operator
+
 import cerberus
 import stripe
 from nameko.rpc import rpc
-from rpc import validate
-from config.settings.common import security
+# for unittest
+# from products.config.settings.common.security import key
+# from products.rpc.exceptions import handling
+# from products.rpc.validate import schema_product
+
+from config.settings.common.security import key
+from rpc.exceptions import handling
+from rpc.validate import schema_product
 
 Validator = cerberus.Validator
-schema = validate.schema_product
+schema = schema_product
 
 
 def get_object(id_product):
@@ -23,7 +30,8 @@ class Products(object):
     """
     name = 'ProductsRPC'
 
-    stripe.api_key = security.api_key
+    stripe.api_key = key
+    # stripe.api_key = "sk_test_K5QUkUgvUNKvDD9fEGYBI6Gi"
 
     @rpc
     def get_sku_product(self, id_product):
@@ -45,10 +53,7 @@ class Products(object):
         try:
             item = get_object(id_product)
         except stripe.error.InvalidRequestError as e:
-            body = e.json_body
-            err = body.get('error', {})
-            item = "Status is: {}, message is: {}".format(e.http_status,
-                                                          err.get('message'))
+            return handling(e)
         return item
 
     @rpc
@@ -119,22 +124,19 @@ class Products(object):
             Otherwise, this call raises an error.
 
         """
-        product = get_object(id_product)
         try:
+            product = get_object(id_product)
             sku_id = product.skus.data[0].id
             sku_id = product.skus.data[0].id
             sku = stripe.SKU.retrieve(sku_id)
             sku.delete()
             result = product.delete()
         except stripe.error.InvalidRequestError as e:
-            body = e.json_body
-            err = body.get('error', {})
-            result = "Status is: {}, message is: {}".format(e.http_status,
-                                                            err.get('message'))
+            return handling(e)
         return result
 
     @rpc
-    def update_product(self, body):
+    def update_product(self, id_product, body):
         """Updates the specific product by setting the values of the parameters
            passed.
 
@@ -148,11 +150,14 @@ class Products(object):
             result (object) Returns the product object if the update succeeded.
 
         """
-        id_product = body.pop("id")
-        product = stripe.Product.retrieve(id_product)
-        for key in body:
-            product[key] = body[key]
-        result = product.save()
+        # id_product = body.pop("id")
+        try:
+            product = stripe.Product.retrieve(id_product)
+            for keys in body:
+                product[keys] = body[keys]
+            result = product.save()
+        except stripe.error.InvalidRequestError as e:
+            return handling(e)
         return result
 
     @rpc
