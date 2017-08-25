@@ -20,6 +20,7 @@ services:
         - RABBIT_PORT=5672
         - RABBIT_MANAGEMENT_PORT=15672
         - SETTINGS_MODULE=products.config.settings.common
+        - PYTHONPATH=:/products
 networks:
   gateway_backend:
     external: true
