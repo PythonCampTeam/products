@@ -31,7 +31,6 @@ class Products(object):
     name = 'ProductsRPC'
 
     stripe.api_key = key
-    # stripe.api_key = "sk_test_K5QUkUgvUNKvDD9fEGYBI6Gi"
 
     @rpc
     def get_sku_product(self, id_product):
@@ -82,7 +81,7 @@ class Products(object):
         """
         v = Validator()
         if not v.validate(body, schema):
-            raise {"errors": v.error}
+            return {"errors": v.errors}
         name = body.get("name")
         description = body.get("description")
         attributes = body.get("attributes")
@@ -150,7 +149,6 @@ class Products(object):
             result (object) Returns the product object if the update succeeded.
 
         """
-        # id_product = body.pop("id")
         try:
             product = stripe.Product.retrieve(id_product)
             for keys in body:
@@ -162,11 +160,11 @@ class Products(object):
 
     @rpc
     def search_products(self, search, order_by, desc):
-        """Returns a list of products with a given parameter
+        """Filtering the list of products according to the specified parameter
 
         Args:
             search (string) parameter for search
-            items (list) List of all products
+            items (list) list of all products
             order_by (string) parameter for to ordering
             desc (bool) sorting direction
             result (list) list products sorting by search
@@ -177,7 +175,7 @@ class Products(object):
         """
         items = stripe.Product.list(limit=100)["data"]
         if search is False:
-            result = items
+            return Products.sorted(items, order_by, desc)
         else:
             result = [it for it in items if it.get("name") == search or
                       it.metadata.get("type") == search or
@@ -187,14 +185,13 @@ class Products(object):
         return sort
 
     def sorted(items, sorty_value, desc):
-        """Returns the sorted product list
+        """Sorts the list of products according to the specified parameter
 
         Args:
+            items (list) list of objects products
             sorty_value (str) parameter for to sorting
-            items (list) List of objects products
-            prod_sorted (list) sorted products list
-            func_sort (func) Function for sorting
             desc (bool) sorting direction
+            func_sort (func) function for sorting
 
         Returns:
             Sorted products list

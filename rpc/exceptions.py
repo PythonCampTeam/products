@@ -1,7 +1,3 @@
-class StripeError(Exception):
-    pass
-
-
 def handling(ecxeption):
     """Raises if the arguments InvalidRequestError
     """
