@@ -3,14 +3,15 @@ import operator
 import cerberus
 import stripe
 from nameko.rpc import rpc
-# for unittest
-# from products.config.settings.common.security import key
-# from products.rpc.exceptions import handling
-# from products.rpc.validate import schema_product
 
-from config.settings.common.security import key
-from rpc.exceptions import handling
-from rpc.validate import schema_product
+try:
+    from products.config.settings.common.security import key
+    from products.rpc.exceptions import handling
+    from products.rpc.validate import schema_product
+except ImportError:
+    from config.settings.common.security import key
+    from rpc.exceptions import handling
+    from rpc.validate import schema_product
 
 Validator = cerberus.Validator
 schema = schema_product
@@ -28,7 +29,7 @@ class Products(object):
     Note: See https://stripe.com
 
     """
-    name = 'ProductsRPC'
+    name = 'Productsrpc'
 
     stripe.api_key = key
 

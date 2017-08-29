@@ -2,9 +2,11 @@ import unittest
 # from nameko.rpc import rpc, RpcProxy
 from unittest.mock import MagicMock, patch
 import stripe
-# from products.rpc.endpoints import Products
 
-from rpc.endpoints import Products
+try:
+    from products.rpc.endpoints import Products
+except ImportError:
+    from rpc.endpoints import Products
 
 
 class ProductsTest(unittest.TestCase):
