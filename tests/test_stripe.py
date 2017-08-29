@@ -1,5 +1,4 @@
 import unittest
-# from nameko.rpc import rpc, RpcProxy
 from unittest.mock import MagicMock, patch
 import stripe
 
