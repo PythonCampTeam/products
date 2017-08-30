@@ -13,6 +13,7 @@ services:
       - gateway_backend
     external_links:
       - rabbit-day7:rabbit
+    command: ./run.sh
     environment:
         - RABBIT_PASSWORD=guest
         - RABBIT_USER=guest
@@ -20,7 +21,7 @@ services:
         - RABBIT_PORT=5672
         - RABBIT_MANAGEMENT_PORT=15672
         - SETTINGS_MODULE=products.config.settings.common
-        - PYTHONPATH=:/products
+        - PYTHONPATH=${PYTHONPATH}:/
 networks:
   gateway_backend:
     external: true

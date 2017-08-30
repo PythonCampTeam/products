@@ -4,14 +4,17 @@ import cerberus
 import stripe
 from nameko.rpc import rpc
 
-try:
-    from products.config.settings.common.security import key
-    from products.rpc.exceptions import handling
-    from products.rpc.validate import schema_product
-except ImportError:
-    from config.settings.common.security import key
-    from rpc.exceptions import handling
-    from rpc.validate import schema_product
+from products.config.settings.common.security import key
+from products.rpc.exceptions import handling
+from products.rpc.validate import schema_product
+# try:
+#     from products.config.settings.common.security import key
+#     from products.rpc.exceptions import handling
+#     from products.rpc.validate import schema_product
+# except ImportError:
+#     from config.settings.common.security import key
+#     from rpc.exceptions import handling
+#     from rpc.validate import schema_product
 
 Validator = cerberus.Validator
 schema = schema_product
@@ -98,15 +101,16 @@ class Products(object):
             package_dimensions=package_dimensions,
             metadata=metadata
          )
-        stripe.SKU.create(
-            product=item.id,
+        sku = stripe.SKU.create(
+            product=item.get('id'),
             attributes=attributes_sku,
             price=price,
             package_dimensions=package_dimensions,
             currency="usd",
             inventory=inventory)
 
-        return get_object(item.id)
+        return {"product": item, "sku": sku}
+        # return get_object(item.id)
 
     @rpc
     def delete_product(self, id_product):
@@ -126,7 +130,6 @@ class Products(object):
         """
         try:
             product = get_object(id_product)
-            sku_id = product.skus.data[0].id
             sku_id = product.skus.data[0].id
             sku = stripe.SKU.retrieve(sku_id)
             sku.delete()

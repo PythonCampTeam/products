@@ -9,5 +9,4 @@ RUN apt-get update && apt-get install -y \
   netcat
 
 RUN /bin/bash -c "pip3 install -r /products/requirements/base.txt"
-CMD /products/run.sh
-#CMD ["nameko","run" "/service/rpc/service_hello"]
+#CMD /products/run.sh
