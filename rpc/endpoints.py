@@ -101,7 +101,7 @@ class Products(object):
             package_dimensions=package_dimensions,
             metadata=metadata
          )
-        sku = stripe.SKU.create(
+        stripe.SKU.create(
             product=item.get('id'),
             attributes=attributes_sku,
             price=price,
@@ -109,7 +109,8 @@ class Products(object):
             currency="usd",
             inventory=inventory)
 
-        return {"product": item, "sku": sku}
+        return get_object(item.id)
+        # return {"product": item, "sku": sku}
         # return get_object(item.id)
 
     @rpc
@@ -132,8 +133,9 @@ class Products(object):
             product = get_object(id_product)
             sku_id = product.skus.data[0].id
             sku = stripe.SKU.retrieve(sku_id)
-            sku.delete()
-            result = product.delete()
+            stripe.SKU.delete(sku)
+            # sku.delete()
+            result = stripe.Product.delete(product)
         except stripe.error.InvalidRequestError as e:
             return handling(e)
         return result
@@ -154,10 +156,10 @@ class Products(object):
 
         """
         try:
-            product = stripe.Product.retrieve(id_product)
+            product = get_object(id_product)
             for keys in body:
                 product[keys] = body[keys]
-            result = product.save()
+            result = stripe.Product.save(product)
         except stripe.error.InvalidRequestError as e:
             return handling(e)
         return result
