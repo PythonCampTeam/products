@@ -1,12 +1,13 @@
 import unittest
-# from unittest.mock import MagicMock, patch
 from unittest.mock import patch
+
 import stripe
-# from products.rpc.endpoints import Products, get_object
-from products.rpc.endpoints import Products, get_object
+
+from products.rpc.products import Products, get_object
 
 
 class ProductsTest(unittest.TestCase):
+    """Class for testing endpoints"""
 
     def setUp(self):
         self.id_product = "prod_BDQT7ifqt1FFc1"
@@ -49,29 +50,26 @@ class ProductsTest(unittest.TestCase):
                         }
                        ]
                       }
-        # self.sku = {
-        #          'name': 'Test_sku',
-        #          'object': 'sku',
-        #          'inventory': {
-        #              'quantity': 500,
-        #              'type': 'finite'
-        #          }
-        #          }
-        # self.sku_obj = stripe.StripeObject().construct_from(self.sku, '')
+        self.json_body = {'error': {'message': 'Testin exceptions',
+                                    'param': 'id',
+                                    'type': 'invalid_request_error'}}
+        self.exp = stripe.error.InvalidRequestError(
+                                                    message="Ooops",
+                                                    param="id",
+                                                    json_body=self.json_body,
+                                                    http_status='400'
+                                                    )
         self.product1 = stripe.StripeObject().construct_from(
                               self.items.get("data")[0], '')
-        self.product2 = stripe.StripeObject().construct_from(
-                              self.items.get("data")[1], '')
         self.sku_obj = self.product1.skus
 
     @patch('stripe.Product.retrieve')
     def test_get_sku(self, mock_poduct_retrieve):
         """Check method return id's sku of products"""
         mock_poduct_retrieve.return_value = self.product1
-        print("Check get_sku_product")
-        print(self.obj.get_sku_product(self.id_product))
         self.assertEqual(self.obj.get_sku_product(self.id_product), '222')
         self.assertTrue(mock_poduct_retrieve.called)
+        print("Check get_sku_product")
 
     @patch('stripe.SKU.retrieve')
     @patch('stripe.Product.retrieve')
@@ -88,17 +86,16 @@ class ProductsTest(unittest.TestCase):
                }}
         sku_obj = stripe.StripeObject().construct_from(sku, '')
         mock_sku_retrieve.return_value = sku_obj
-        mock_poduct_retrieve.return_value = self.product2
+        mock_poduct_retrieve.return_value = self.product1
         mock_delete_sku.return_value = {"sku": "delete"}
         mock_delete_product.return_value = {"products": "delete"}
-        print("Check delete products")
         self.assertTrue(mock_delete_sku is stripe.SKU.delete)
         self.assertTrue(mock_delete_product is stripe.Product.delete)
         self.assertTrue(stripe.Product.retrieve is mock_poduct_retrieve)
         self.assertTrue(stripe.SKU.retrieve is mock_sku_retrieve)
-        print(self.obj.delete_product(self.id_product))
         self.assertEqual(self.obj.delete_product(self.id_product),
                          {"products": "delete"})
+        print("Check delete products")
 
     @patch('stripe.Product.retrieve')
     @patch('stripe.Product.create')
@@ -143,62 +140,79 @@ class ProductsTest(unittest.TestCase):
         mock_product.return_value = product_create
         mock_sku.return_value = self.sku_obj
         mock_poduct_retrieve.return_value = self.product1
-        print("Mock check create products")
         self.assertEqual(self.obj.create_product(body), self.product1)
         self.assertTrue(mock_product.called)
         self.assertTrue(mock_sku.called)
+        print("Check create products")
 
     @patch('stripe.Product.retrieve')
     def test_get_product(self, mock_get_product):
+        """Check methods get_product and get_object"""
         mock_get_product.return_value = self.product1
-        print("Mock check with retrieve")
         self.assertEqual(get_object(self.id_product), self.product1)
+        self.assertEqual(self.obj.get_product(self.id_product), self.product1)
         self.assertTrue(mock_get_product.called)
+        print("Mock check with retrieve")
 
     def test_create_validate(self):
+        """Check validate parameters for method of create_product"""
         obj = self.obj
-        body = {
-                "name": "Test",
-                "description": "Testing",
-                "attributes": ["manufacturer",
-                               "material"],
-                "package_dimensions":  {},
-            }
+        body = {}
         error_dict = obj.create_product(body)
         self.assertIsNotNone(error_dict.get("errors"))
+        print('Check validate')
 
     @patch('stripe.Product.save')
     @patch('stripe.Product.retrieve')
     def test_update_product(self, mock_poduct_retrieve, mock_product_update):
+        """Ckeck method update_product"""
         mock_poduct_retrieve.return_value = self.product1
         mock_product_update.return_value = {"status": "product updated"}
         body = {"name": "super test",
                 "description": "Oooooo",
                 "skus": {"data": "Lol"}}
-        print(self.obj.update_product(self.id_product, body))
+        self.assertEqual(self.obj.update_product(self.id_product, body),
+                         {"status": "product updated"})
+        print('Check update_product ')
+
+    @patch('stripe.Product.list')
+    def test_filter_product(self, mock_list_products):
+        """Ckeck method search_products and sorted"""
+        product = stripe.StripeObject().construct_from(self.items, '')
+        mock_list_products.return_value = product
+        self.assertIsNotNone(self.obj.search_products(False, 'price', False))
+        self.assertIsNotNone(self.obj.search_products(False, 'price', False))
+        self.assertIsNotNone(self.obj.search_products('cats', 'name', False))
+        self.assertIsNotNone(self.obj.search_products('toys',
+                             'category', False))
+        self.assertTrue(mock_list_products.called)
+        print('Check filter_product')
 
     @patch('stripe.Product.save')
     @patch('stripe.Product.retrieve')
     def test_update_raises(self, mock_poduct_retrieve, mock_product_update):
-        product = stripe.StripeObject().construct_from(self.items.get("data")[0], '')
-        json_body = {'error': {'message': 'No such product: 4545',
-                               'param': 'id',
-                               'type': 'invalid_request_error'}}
-        mock_poduct_retrieve.return_value = product
-        mock_product_update.side_effect = stripe.error.InvalidRequestError(message="error!", param="id product", json_body=json_body)
+        """Check call raise in method update_product"""
+        mock_poduct_retrieve.return_value = self.product1
+        mock_product_update.side_effect = self.exp
         body = {"name": "super test",
                 "description": "Oooooo",
                 "skus": {"data": "Lol"}}
-        print(self.obj.update_product(self.id_product, body))
+        raise_exp = self.obj.update_product(self.id_product, body)
+        self.assertTrue('Status is: 400' in raise_exp)
+        self.assertTrue(mock_product_update.called)
+        print("Check called raise in update product")
 
-    @patch('stripe.Product.list')
-    def test_filter_product(self, mock_list_products):
-        product = stripe.StripeObject().construct_from(self.items, '')
-        mock_list_products.return_value = product
-        print(self.obj.search_products(False, 'price', False))
-        print(self.obj.search_products(False, 'price', False))
-        print(self.obj.search_products('cats', 'price', False))
-        print(self.obj.search_products('toys', 'price', False))
+    @patch('stripe.Product.retrieve')
+    def test_delete_raise(self, mock_poduct_retrieve):
+        """"Check called raise in method delete product and get product"""
+        mock_poduct_retrieve.side_effect = self.exp
+        self.assertTrue(stripe.Product.retrieve is mock_poduct_retrieve)
+        raise_exp_delete = self.obj.delete_product(self.id_product)
+        self.assertTrue('Testin exceptions' in raise_exp_delete)
+        raise_exp_get_product = self.obj.get_product(self.id_product)
+        self.assertTrue('Testin exceptions' in raise_exp_get_product)
+        self.assertTrue(mock_poduct_retrieve.called)
+        print("Check called raise in delete product and get product")
 
 
 if __name__ == '__main__':
