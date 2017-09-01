@@ -11,4 +11,4 @@ done
 
 # Run the service
 echo ${PYTHONPATH}
-nameko run --config /products/config/config.yml rpc.endpoints
+nameko run --config /products/config/config.yml rpc.products

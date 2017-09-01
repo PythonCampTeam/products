@@ -7,14 +7,6 @@ from nameko.rpc import rpc
 from products.config.settings.common.security import key
 from products.rpc.exceptions import handling
 from products.rpc.validate import schema_product
-# try:
-#     from products.config.settings.common.security import key
-#     from products.rpc.exceptions import handling
-#     from products.rpc.validate import schema_product
-# except ImportError:
-#     from config.settings.common.security import key
-#     from rpc.exceptions import handling
-#     from rpc.validate import schema_product
 
 Validator = cerberus.Validator
 schema = schema_product
@@ -110,8 +102,6 @@ class Products(object):
             inventory=inventory)
 
         return get_object(item.id)
-        # return {"product": item, "sku": sku}
-        # return get_object(item.id)
 
     @rpc
     def delete_product(self, id_product):
@@ -134,7 +124,6 @@ class Products(object):
             sku_id = product.skus.data[0].id
             sku = stripe.SKU.retrieve(sku_id)
             stripe.SKU.delete(sku)
-            # sku.delete()
             result = stripe.Product.delete(product)
         except stripe.error.InvalidRequestError as e:
             return handling(e)
