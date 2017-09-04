@@ -169,13 +169,15 @@ class Products(object):
 
         """
         items = stripe.Product.list(limit=100)["data"]
-        if search is False:
+        if not search:
             return Products.sorted(items, order_by, desc)
         else:
             result = [it for it in items if it.get("name") == search or
                       it.metadata.get("type") == search or
                       it.metadata.get("category") == search or
-                      it.metadata.get("for") == search]
+                      it.metadata.get("for") == search or
+                      search in it.description or
+                      search == [att for att in it.attributes]]
         sort = Products.sorted(result, order_by, desc)
         return sort
 
@@ -198,7 +200,7 @@ class Products(object):
         if sorty_value == "price":
             func_sort = sorty_price
             return sorted(items, key=func_sort, reverse=desc)
-        if items[0].get(sorty_value) is None:
+        if not items[0].get(sorty_value):
             func_sort = operator.attrgetter('metadata.'+sorty_value)
             return sorted(items, key=func_sort, reverse=desc)
         func_sort = operator.attrgetter(sorty_value)
